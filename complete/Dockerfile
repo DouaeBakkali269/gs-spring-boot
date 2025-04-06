@@ -1,40 +1,33 @@
-# Dockerfile for gs-spring-boot
-
-# ---- Stage 1: Build ----
-# Use a JDK image that matches your project's Java version (e.g., 17)
+# Stage 1: Build
 FROM eclipse-temurin:17-jdk-jammy as builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper files
+# Copy Maven wrapper files (corrected from .mwn to .mvn)
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 
-# Download Maven dependencies (caches layers)
-# Using 'dependency:go-offline' is faster if it works, otherwise 'dependency:resolve'
-RUN ./mvnw dependency:go-offline -Dmaven.repo.local=./.m2/repository
-# If go-offline fails, try: RUN ./mvnw dependency:resolve
+# Make mvnw executable and convert line endings if needed
+RUN chmod +x mvnw && \
+    sed -i 's/\r$//' mvnw  # Remove Windows CR characters
 
-# Copy the source code
+# Download dependencies
+RUN ./mvnw dependency:go-offline -Dmaven.repo.local=./.m2/repository
+
+# Copy source code
 COPY src ./src
 
-# Build the application JAR, skipping tests
-# The JAR will be in /app/target/
+# Build the application
 RUN ./mvnw package -DskipTests -Dmaven.repo.local=./.m2/repository
 
-
-# ---- Stage 2: Runtime ----
-# Use a smaller JRE image for the final container
+# Stage 2: Runtime
 FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
-# Copy only the built JAR from the builder stage
+# Copy JAR from builder stage (corrected syntax)
 COPY --from=builder /app/target/*.jar app.jar
 
-# Expose the port the application runs on
 EXPOSE 8080
 
-# Command to run the application
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
