@@ -1,0 +1,35 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  # Service 1: The Spring Boot Web Application (gs-spring-boot)
+  app:
+    build: . # Build the image using the Dockerfile we created in step 4b
+    ports:
+      - "8080:8080" # Map host port 8080 to container port 8080
+    environment:
+      # Example environment variables IF the app needed to connect to MySQL
+      # NOTE: gs-spring-boot *does not* use these, but we include them
+      #       to demonstrate the structure from the reference repository.
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/mydatabase?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=mysecretpassword # Match MYSQL_ROOT_PASSWORD below
+    depends_on:
+      - db # Wait for the 'db' service to be ready
+
+  # Service 2: The MySQL Database
+  db:
+    image: mysql:8.0 # Use an official MySQL 8 image
+    ports:
+      # Optional: Expose MySQL port 3306 on the host if you need external access
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: mysecretpassword # Set the root password for MySQL
+      MYSQL_DATABASE: mydatabase # Automatically create this database on startup
+    volumes:
+      - db_data:/var/lib/mysql # Persist MySQL data using a named volume
+
+# Define named volumes
+volumes:
+  db_data: {} # Use the default driver for the 'db_data' volume
